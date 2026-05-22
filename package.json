@@ -1,0 +1,21 @@
+{
+  "name": "sand-beige-portfolio",
+  "version": "1.0.0",
+  "description": "Minimalist sand-beige personal portfolio website",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y serve .",
+    "dev": "npx -y serve ."
+  },
+  "keywords": [
+    "portfolio",
+    "minimalist",
+    "sand-beige",
+    "developer",
+    "html5",
+    "css3",
+    "vanilla-js"
+  ],
+  "author": "",
+  "license": "ISC"
+}

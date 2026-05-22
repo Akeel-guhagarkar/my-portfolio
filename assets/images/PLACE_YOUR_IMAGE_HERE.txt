@@ -1,0 +1,4 @@
+Put your portrait image here:
+1. Rename your image to "profile.jpg".
+2. Save it inside this folder (assets/images/).
+3. The portfolio website will automatically load your image and hide the gradient fallback frame.
