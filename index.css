@@ -932,6 +932,8 @@ img {
     flex-direction: column;
     height: 100%;
     transition: all var(--transition-smooth);
+    color: inherit;
+    text-decoration: none;
 }
 
 .project-card:hover {
@@ -952,7 +954,16 @@ img {
     transition: transform var(--transition-smooth);
 }
 
-.project-card:hover .project-gradient-bg {
+.project-image-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform var(--transition-smooth);
+}
+
+.project-card:hover .project-gradient-bg,
+.project-card:hover .project-image-img {
     transform: scale(1.05);
 }
 
