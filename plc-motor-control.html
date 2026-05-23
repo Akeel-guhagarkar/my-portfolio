@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive PLC-Based Forward & Reverse Motor Control Simulation. Try the live ladder logic sequencing.">
+    <title>PLC Motor Control Simulator | Akeel Guhagarkar</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Core Portfolio Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <style>
+        /* Custom Simulator Styles matching Sand-Beige theme */
+        .sim-container {
+            margin-top: 12rem;
+            padding-bottom: 8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            transition: color var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .back-btn:hover {
+            color: var(--accent-color);
+            transform: translateX(-4px);
+        }
+
+        .sim-title-group {
+            margin-bottom: 4rem;
+        }
+
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .sim-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 2rem;
+            padding: 3rem;
+            box-shadow: 0 1rem 3rem var(--shadow-color);
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sim-card-title {
+            font-size: 2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        /* Control Cabinet Styles */
+        .cabinet-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+
+        @media (max-width: 500px) {
+            .cabinet-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .switch-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--border-color);
+            padding-right: 3rem;
+        }
+
+        @media (max-width: 500px) {
+            .switch-column {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding-right: 0;
+                padding-bottom: 3rem;
+            }
+        }
+
+        /* PLC Switch Styling */
+        .plc-switch-wrapper {
+            position: relative;
+            width: 80px;
+            height: 140px;
+            background: #252220;
+            border: 4px solid #3d3734;
+            border-radius: 12px;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .switch-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #8e837a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .switch-label.active {
+            color: var(--accent-color);
+            text-shadow: 0 0 8px rgba(197, 168, 128, 0.6);
+        }
+
+        .switch-handle {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #a78b68 0%, #5d544e 100%);
+            border: 3px solid #2e2a27;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        .switch-handle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 16px;
+            background: #faf8f5;
+            border-radius: 3px;
+            box-shadow: 0 0 4px rgba(255,255,255,0.8);
+        }
+
+        .plc-switch-wrapper.on .switch-handle {
+            transform: rotate(90deg);
+        }
+
+        /* Pilot Lights */
+        .pilot-lights {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .light-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .pilot-light {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #3a3532;
+            border: 3px solid #2e2a27;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pilot-light::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+        }
+
+        /* Light status classes */
+        .light-power.active {
+            background-color: #faf8f5;
+            box-shadow: 0 0 15px #faf8f5, inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+        .light-fwd.active {
+            background-color: #2ec4b6;
+            box-shadow: 0 0 20px rgba(46, 196, 182, 0.8), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+        .light-dwell.active {
+            background-color: #ff9f1c;
+            box-shadow: 0 0 20px rgba(255, 159, 28, 0.8), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+        .light-rev.active {
+            background-color: #3a86c8;
+            box-shadow: 0 0 20px rgba(58, 134, 200, 0.8), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+
+        .light-label {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* LED Display Group */
+        .timer-display-group {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+        }
+
+        .led-panel {
+            background: #181513;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 2rem;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .led-label {
+            font-family: var(--font-sans);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .led-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #3a3532;
+            transition: color 0.3s ease;
+        }
+
+        .led-panel.active .led-val {
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Physical Motor Visualizer */
+        .motor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+        }
+
+        .motor-svg-wrapper {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .motor-body {
+            fill: var(--bg-secondary);
+            stroke: var(--text-secondary);
+            stroke-width: 4;
+            transition: fill 0.3s ease, stroke 0.3s ease;
+        }
+
+        .motor-fins {
+            stroke: var(--text-secondary);
+            stroke-width: 4;
+        }
+
+        .motor-shaft {
+            fill: #8e837a;
+            stroke: #2e2a27;
+            stroke-width: 3;
+            transform-origin: 100px 100px;
+        }
+
+        .motor-rotor {
+            fill: var(--accent-light);
+            stroke: var(--accent-color);
+            stroke-width: 3;
+            transform-origin: 100px 100px;
+        }
+
+        .rotor-line {
+            stroke: var(--accent-color);
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .dir-arrow {
+            position: absolute;
+            font-size: 2.8rem;
+            color: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.5s ease;
+            pointer-events: none;
+        }
+
+        .dir-arrow.fwd {
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .dir-arrow.rev {
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(180deg);
+        }
+
+        .dir-arrow.active {
+            opacity: 1;
+            animation: pulse-arrow 1s infinite alternate;
+        }
+
+        @keyframes pulse-arrow {
+            0% { transform: translateX(-50%) scale(1); }
+            100% { transform: translateX(-50%) scale(1.2); }
+        }
+
+        .motor-dashboard {
+            margin-top: 2rem;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .dashboard-metric {
+            background-color: var(--bg-secondary);
+            padding: 1.2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-title {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .metric-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Ladder Logic Styles */
+        .ladder-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+        }
+
+        .rung {
+            display: flex;
+            align-items: center;
+            height: 50px;
+            position: relative;
+            background: linear-gradient(to right, transparent, var(--bg-secondary) 10%, var(--bg-secondary) 90%, transparent);
+            border-radius: 8px;
+            padding: 0 15px;
+        }
+
+        .rung-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            width: 75px;
+            flex-shrink: 0;
+            color: var(--text-muted);
+        }
+
+        .rung-line {
+            flex-grow: 1;
+            height: 4px;
+            background-color: var(--border-color);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        .rung-line.active {
+            background-color: #2ec4b6;
+            box-shadow: 0 0 8px rgba(46, 196, 182, 0.6);
+        }
+
+        .contact, .coil {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-card);
+            padding: 0 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .contact {
+            width: 30px;
+            height: 30px;
+            border-left: 3px solid var(--text-secondary);
+            border-right: 3px solid var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .contact.nc::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 32px;
+            height: 3px;
+            background-color: var(--text-secondary);
+            transform: translate(-50%, -50%) rotate(-45deg);
+            transition: background-color 0.3s ease;
+        }
+
+        .contact.active {
+            border-left-color: #2ec4b6;
+            border-right-color: #2ec4b6;
+            color: #2ec4b6;
+        }
+
+        .contact.nc.active::after {
+            background-color: #2ec4b6;
+        }
+
+        .coil {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--text-secondary);
+            border-radius: 50%;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .coil.active {
+            border-color: #2ec4b6;
+            color: #2ec4b6;
+            box-shadow: 0 0 10px rgba(46, 196, 182, 0.4);
+        }
+
+        .tag-label {
+            position: absolute;
+            bottom: -18px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .contact.active .tag-label, .coil.active .tag-label {
+            color: #2ec4b6;
+            font-weight: bold;
+        }
+
+        /* Plotter Canvas */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            background-color: #151210;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-legend {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            gap: 1.5rem;
+            font-size: 1.1rem;
+            background: rgba(21, 18, 16, 0.85);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            z-index: 2;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #eaafd5;
+            font-family: var(--font-sans);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        /* I/O details table */
+        .io-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            font-size: 1.4rem;
+        }
+
+        .io-table th, .io-table td {
+            text-align: left;
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .io-table th {
+            font-weight: 600;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .io-table td {
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+        }
+
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            background-color: var(--bg-secondary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- Floating Glassmorphic Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <span>A</span>.Guhagarkar
+            </a>
+            
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html#home" class="nav-link">Home</a></li>
+                    <li><a href="index.html#about" class="nav-link">About</a></li>
+                    <li><a href="index.html#internships" class="nav-link">Experience</a></li>
+                    <li><a href="index.html#projects" class="nav-link active">Projects</a></li>
+                    <li><a href="index.html#resume" class="nav-link">Skills</a></li>
+                    <li><a href="index.html#achievements" class="nav-link">Achievements</a></li>
+                    <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle visual theme">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun sun-icon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon moon-icon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container sim-container">
+        <!-- Back Button -->
+        <a href="index.html#projects" class="back-btn">
+            <i data-lucide="arrow-left"></i> Back to Portfolio
+        </a>
+
+        <!-- Title -->
+        <div class="sim-title-group reveal">
+            <span class="subtitle-badge">Interactive Simulation</span>
+            <h1 class="section-title">PLC-Based <span class="serif-italic">Forward & Reverse</span> Motor Control</h1>
+            <p class="section-description">A real-time logic simulator displaying physical motor dynamics, industrial control status lights, and active electrical rungs of the PLC program.</p>
+        </div>
+
+        <!-- Simulation Grid -->
+        <div class="sim-grid">
+            <!-- Left Side: Control cabinet & Motor visualizer -->
+            <div class="reveal">
+                <!-- Control cabinet -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="sliders"></i>Control Cabinet (HMI)</h3>
+                    <div class="cabinet-grid">
+                        <div class="switch-column">
+                            <div class="plc-switch-wrapper" id="plc-switch">
+                                <span class="switch-label" id="label-on">ON</span>
+                                <div class="switch-handle"></div>
+                                <span class="switch-label active" id="label-off">OFF</span>
+                            </div>
+                            <span class="light-label" style="margin-top: 1.5rem; font-weight: 600;">Main Switch (I:0/0)</span>
+                        </div>
+                        <div class="pilot-lights">
+                            <div class="light-item">
+                                <div class="pilot-light light-power" id="light-power"></div>
+                                <span class="light-label">System Power (O:0/0)</span>
+                            </div>
+                            <div class="light-item">
+                                <div class="pilot-light light-fwd" id="light-fwd"></div>
+                                <span class="light-label">Forward Active (O:0/1)</span>
+                            </div>
+                            <div class="light-item">
+                                <div class="pilot-light light-dwell" id="light-dwell"></div>
+                                <span class="light-label">Dwell Delay (Internal)</span>
+                            </div>
+                            <div class="light-item">
+                                <div class="pilot-light light-rev" id="light-rev"></div>
+                                <span class="light-label">Reverse Active (O:0/2)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LED Timers -->
+                    <div class="timer-display-group">
+                        <div class="led-panel" id="panel-fwd-timer">
+                            <div class="led-label">FWD Timer (T1)</div>
+                            <div class="led-val" id="val-fwd-timer">10.0s</div>
+                        </div>
+                        <div class="led-panel" id="panel-dwell-timer">
+                            <div class="led-label">DWELL (T2)</div>
+                            <div class="led-val" id="val-dwell-timer">05.0s</div>
+                        </div>
+                        <div class="led-panel" id="panel-rev-timer">
+                            <div class="led-label">REV Timer (T3)</div>
+                            <div class="led-val" id="val-rev-timer">10.0s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motor Visualizer -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="cog"></i>Industrial 3-Phase Motor</h3>
+                    <div class="motor-container">
+                        <div class="motor-svg-wrapper">
+                            <!-- CW and CCW Direction Indicator Arrows overlay -->
+                            <div class="dir-arrow fwd" id="arrow-fwd"><i data-lucide="rotate-cw"></i></div>
+                            <div class="dir-arrow rev" id="arrow-rev"><i data-lucide="rotate-ccw"></i></div>
+                            
+                            <svg viewBox="0 0 200 200" width="100%" height="100%">
+                                <!-- Outer fins -->
+                                <g class="motor-fins">
+                                    <line x1="100" y1="20" x2="100" y2="180" />
+                                    <line x1="20" y1="100" x2="180" y2="100" />
+                                    <line x1="43.4" y1="43.4" x2="156.6" y2="156.6" />
+                                    <line x1="43.4" y1="156.6" x2="156.6" y2="43.4" />
+                                </g>
+                                <!-- Motor Stator Body -->
+                                <circle cx="100" cy="100" r="70" class="motor-body" />
+                                <circle cx="100" cy="100" r="50" class="motor-body" style="fill: var(--bg-card);" />
+                                
+                                <!-- Stator Slots -->
+                                <circle cx="100" cy="100" r="60" stroke="var(--border-color)" stroke-width="2" stroke-dasharray="10, 8" fill="none" />
+                                
+                                <!-- Rotor -->
+                                <g id="rotor-group" class="motor-rotor">
+                                    <circle cx="100" cy="100" r="32" />
+                                    <!-- Rotor Bars/Lines to show rotation visually -->
+                                    <line x1="100" y1="68" x2="100" y2="132" class="rotor-line" />
+                                    <line x1="68" y1="100" x2="132" y2="100" class="rotor-line" />
+                                    <line x1="77.4" y1="77.4" x2="122.6" y2="122.6" class="rotor-line" />
+                                    <line x1="77.4" y1="122.6" x2="122.6" y2="77.4" class="rotor-line" />
+                                </g>
+                                <!-- Center Shaft -->
+                                <circle cx="100" cy="100" r="10" class="motor-shaft" />
+                                <circle cx="98" cy="98" r="3" fill="#faf8f5" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="motor-dashboard">
+                        <div class="dashboard-metric">
+                            <div class="metric-title">Motor Speed</div>
+                            <div class="metric-val" id="motor-speed-val">0 RPM</div>
+                        </div>
+                        <div class="dashboard-metric">
+                            <div class="metric-title">Rotation Direction</div>
+                            <div class="metric-val" id="motor-dir-val">STOPPED</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Ladder Logic & Explanation -->
+            <div class="reveal">
+                <!-- Ladder logic -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="network"></i>PLC Ladder Logic Program</h3>
+                    <div class="ladder-wrapper">
+                        <!-- Rung 0: Switch -> Power Relay -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0000</div>
+                            <div class="rung-line" id="rung-line-0">
+                                <!-- Contact 1: Switch (I:0/0) -->
+                                <div class="contact" style="left: 25%;" id="contact-switch">
+                                    I:0/0
+                                    <span class="tag-label">SWITCH</span>
+                                </div>
+                                <!-- Coil: System On (M0) -->
+                                <div class="coil" style="left: 85%;" id="coil-system">
+                                    M0
+                                    <span class="tag-label">SYS_ON</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 1: System On & Fwd Timer Contact -> Forward Contactor Coil -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0001</div>
+                            <div class="rung-line" id="rung-line-1">
+                                <!-- System On (M0) -->
+                                <div class="contact" style="left: 20%;" id="contact-fwd-m0">
+                                    M0
+                                    <span class="tag-label">SYS_ON</span>
+                                </div>
+                                <!-- Forward running phase active (not dwell or rev) -->
+                                <div class="contact nc" style="left: 45%;" id="contact-fwd-t2">
+                                    T2
+                                    <span class="tag-label">DWELL_DN</span>
+                                </div>
+                                <div class="contact nc" style="left: 68%;" id="contact-fwd-interlock">
+                                    O:0/2
+                                    <span class="tag-label">REV_ILK</span>
+                                </div>
+                                <!-- Coil: Forward (O:0/1) -->
+                                <div class="coil" style="left: 90%;" id="coil-fwd">
+                                    O:0/1
+                                    <span class="tag-label">MOTOR_FWD</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 2: System On & Rev Active Phase -> Reverse Contactor Coil -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0002</div>
+                            <div class="rung-line" id="rung-line-2">
+                                <!-- System On (M0) -->
+                                <div class="contact" style="left: 20%;" id="contact-rev-m0">
+                                    M0
+                                    <span class="tag-label">SYS_ON</span>
+                                </div>
+                                <!-- Dwell phase complete -->
+                                <div class="contact" style="left: 42%;" id="contact-rev-t2">
+                                    T2
+                                    <span class="tag-label">DWELL_DN</span>
+                                </div>
+                                <!-- Reverse timer not done -->
+                                <div class="contact nc" style="left: 65%;" id="contact-rev-t3">
+                                    T3
+                                    <span class="tag-label">REV_DN</span>
+                                </div>
+                                <div class="contact nc" style="left: 80%;" id="contact-rev-interlock">
+                                    O:0/1
+                                    <span class="tag-label">FWD_ILK</span>
+                                </div>
+                                <!-- Coil: Reverse (O:0/2) -->
+                                <div class="coil" style="left: 92%;" id="coil-rev">
+                                    O:0/2
+                                    <span class="tag-label">MOTOR_REV</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 3: Timers Sequence -->
+                        <div class="rung" style="height: 60px;">
+                            <div class="rung-label">RUNG 0003</div>
+                            <div class="rung-line" id="rung-line-3">
+                                <div class="contact" style="left: 20%;" id="contact-timer-m0">
+                                    M0
+                                    <span class="tag-label">SYS_ON</span>
+                                </div>
+                                <!-- Forward Timer Box indicator -->
+                                <div class="coil" style="left: 55%; border-radius: 4px; width: 55px; height: 36px; font-size: 0.9rem;" id="coil-t1">
+                                    T1
+                                    <div style="font-size: 0.7rem; font-weight: normal; margin-top: -3px;">10.0s</div>
+                                    <span class="tag-label">FWD_TIM</span>
+                                </div>
+                                <!-- Reverse Timer Box indicator -->
+                                <div class="coil" style="left: 85%; border-radius: 4px; width: 55px; height: 36px; font-size: 0.9rem;" id="coil-t3">
+                                    T3
+                                    <div style="font-size: 0.7rem; font-weight: normal; margin-top: -3px;">10.0s</div>
+                                    <span class="tag-label">REV_TIM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Chart plotting signals -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="activity"></i>Real-Time Scope (Signals Chart)</h3>
+                    <div class="canvas-container">
+                        <div class="canvas-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #2ec4b6;"></div>
+                                Forward Active
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ff9f1c;"></div>
+                                Dwell Stop
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #3a86c8;"></div>
+                                Reverse Active
+                            </div>
+                        </div>
+                        <canvas id="scope-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanations & Details Section -->
+        <div class="sim-card reveal" style="margin-top: 4rem;">
+            <h3 class="sim-card-title"><i data-lucide="book-open"></i>How It Works & Technical Details</h3>
+            
+            <p style="margin-bottom: 2rem; font-size: 1.6rem; line-height: 1.7;">
+                This simulator models a <strong>Reversing Motor Starter</strong> controlled by a PLC (Programmable Logic Controller). In industrial engineering, motors cannot be instantly reversed while spinning without causing major electrical surges and mechanical stress. The logic includes an automated <strong>5-second dwell/stop delay</strong> to let the rotor fully decelerate before reversing direction.
+            </p>
+
+            <h4 style="font-size: 1.6rem; font-weight: 600; margin: 2.5rem 0 1rem 0; color: var(--text-primary);">Program Sequence:</h4>
+            <ul style="list-style-type: disc; padding-left: 2.5rem; margin-bottom: 3rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>Toggle the <strong>Switch ON</strong> to close the <span class="code-font">I:0/0</span> contact, energizing the system control relay (<span class="code-font">M0</span>).</li>
+                <li><strong>Phase 1 (Forward):</strong> The forward contactor coil <span class="code-font">O:0/1</span> is energized. The motor speeds up in the clockwise direction, and the timer <span class="code-font">T1</span> begins its 10-second countdown.</li>
+                <li><strong>Phase 2 (Dwell/Stop):</strong> Once <span class="code-font">T1</span> reaches 10s, its contact trips. The forward contactor de-energizes. The motor decelerates to 0 RPM. The dwell timer <span class="code-font">T2</span> counts down for 5 seconds.</li>
+                <li><strong>Phase 3 (Reverse):</strong> Once the dwell timer <span class="code-font">T2</span> finishes, it triggers the reverse contactor coil <span class="code-font">O:0/2</span>. The motor spins counter-clockwise, and <span class="code-font">T3</span> counts down for 10 seconds.</li>
+                <li><strong>Phase 4 (Cycle Reset):</strong> When <span class="code-font">T3</span> completes, it triggers a cycle reset. If the switch remains ON, the system automatically loops back to Phase 1.</li>
+                <li><strong>Interlocking Safety:</strong> Hardware/software interlocks (<span class="code-font">O:0/1</span> and <span class="code-font">O:0/2</span> normally-closed contacts) are programmed in series on Rungs 1 & 2. This makes it mathematically impossible to energize both forward and reverse contactors simultaneously, which would trigger a catastrophic phase-to-phase short circuit.</li>
+            </ul>
+
+            <h4 style="font-size: 1.6rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">PLC I/O Mapping:</h4>
+            <table class="io-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Type</th>
+                        <th>Tag Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="code-font">I:0/0</td>
+                        <td>Physical Input</td>
+                        <td>Main Switch</td>
+                        <td>Main selector switch to start or halt the automatic control cycle.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">O:0/0</td>
+                        <td>Physical Output</td>
+                        <td>Power Pilot Light</td>
+                        <td>Cabinet pilot light signaling the control sequence is active.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">O:0/1</td>
+                        <td>Physical Output</td>
+                        <td>FWD Contactor</td>
+                        <td>Closes the 3-phase contacts to spin the motor Clockwise.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">O:0/2</td>
+                        <td>Physical Output</td>
+                        <td>REV Contactor</td>
+                        <td>Swaps two phases and closes contacts to spin the motor Counter-Clockwise.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">T1</td>
+                        <td>Internal Timer</td>
+                        <td>FWD Timer</td>
+                        <td>10-second timer controlling the Forward run duration.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">T2</td>
+                        <td>Internal Timer</td>
+                        <td>DWELL Timer</td>
+                        <td>5-second safety timer allowing the motor shaft to come to a stop.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">T3</td>
+                        <td>Internal Timer</td>
+                        <td>REV Timer</td>
+                        <td>10-second timer controlling the Reverse run duration.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 4rem 0; text-align: center; font-size: 1.4rem; color: var(--text-muted);">
+        <div class="container">
+            <p>© 2026 Akeel Guhagarkar. Designed for industrial automation showcase.</p>
+        </div>
+    </footer>
+
+    <!-- Custom Cursor script and Theme toggler sync -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme setup
+            const themeToggle = document.getElementById('theme-toggle');
+            const getSavedTheme = () => localStorage.getItem('portfolio-theme');
+            const saveTheme = (theme) => localStorage.setItem('portfolio-theme', theme);
+            const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                saveTheme(theme);
+            };
+
+            const savedTheme = getSavedTheme();
+            applyTheme(savedTheme ? savedTheme : getSystemTheme());
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(newTheme);
+                });
+            }
+
+            // Custom cursor glow movement
+            const cursorGlow = document.getElementById('cursor-glow');
+            if (cursorGlow && window.innerWidth > 900) {
+                document.addEventListener('mousemove', (e) => {
+                    cursorGlow.style.opacity = '1';
+                    cursorGlow.style.left = `${e.clientX}px`;
+                    cursorGlow.style.top = `${e.clientY}px`;
+                });
+                document.addEventListener('mouseleave', () => {
+                    cursorGlow.style.opacity = '0';
+                });
+            }
+
+            // Initialize Lucide Icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+    <!-- Simulation Script Link -->
+    <script src="plc-motor-control.js"></script>
+</body>
+</html>

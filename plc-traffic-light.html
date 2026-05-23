@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive PLC-Based Traffic Light Control Simulation. Check out the Delta HMI emulator and dynamic road traffic flow.">
+    <title>PLC Traffic Light Simulator | Akeel Guhagarkar</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Core Portfolio Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <style>
+        /* Custom Traffic Light Simulator Styles */
+        .sim-container {
+            margin-top: 12rem;
+            padding-bottom: 8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            transition: color var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .back-btn:hover {
+            color: var(--accent-color);
+            transform: translateX(-4px);
+        }
+
+        .sim-title-group {
+            margin-bottom: 4rem;
+        }
+
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .sim-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 2rem;
+            padding: 3rem;
+            box-shadow: 0 1rem 3rem var(--shadow-color);
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sim-card-title {
+            font-size: 2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        /* HMI Window Emulator Styling (Delta DOP-107BV style) */
+        .hmi-window {
+            background-color: #f0f0f0;
+            border: 8px solid #333;
+            border-radius: 16px;
+            box-shadow: 0 1.5rem 4rem rgba(0,0,0,0.3);
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .hmi-header {
+            background-color: #222;
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #444;
+        }
+
+        .hmi-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #0f0;
+            box-shadow: 0 0 8px #0f0;
+        }
+
+        .hmi-screen {
+            padding: 3rem;
+            background-color: #ffffff;
+            min-height: 320px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1.2fr;
+            gap: 2rem;
+            align-items: center;
+            position: relative;
+        }
+
+        @media (max-width: 600px) {
+            .hmi-screen {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+        }
+
+        /* HMI Buttons */
+        .hmi-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hmi-btn-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .hmi-btn-label {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #222;
+        }
+
+        .hmi-button {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            outline: none;
+            transition: all 0.1s ease;
+        }
+
+        .hmi-button::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .hmi-btn-start {
+            background: radial-gradient(circle at 35% 35%, #ff4d4d 0%, #b30000 80%);
+            box-shadow: 0 6px 0 #800000, 0 10px 15px rgba(0,0,0,0.3);
+        }
+
+        .hmi-btn-start:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #800000, 0 4px 5px rgba(0,0,0,0.3);
+        }
+
+        .hmi-btn-stop {
+            background: radial-gradient(circle at 35% 35%, #3399ff 0%, #0055b3 80%);
+            box-shadow: 0 6px 0 #003d80, 0 10px 15px rgba(0,0,0,0.3);
+        }
+
+        .hmi-btn-stop:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #003d80, 0 4px 5px rgba(0,0,0,0.3);
+        }
+
+        /* HMI Timer Box */
+        .hmi-timer-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .hmi-timer-border {
+            border: 3px double #8e837a;
+            padding: 3px;
+            background-color: #ddd;
+        }
+
+        .hmi-timer-screen {
+            background-color: #0d4d0d;
+            border: 2px solid #222;
+            width: 120px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .hmi-timer-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 3.6rem;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0,255,0,0.7);
+            letter-spacing: 2px;
+        }
+
+        /* HMI Signals stacked indicators */
+        .hmi-indicators {
+            display: flex;
+            flex-direction: column;
+            gap: 2.2rem;
+            background-color: #eaeaea;
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .hmi-light-group {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .hmi-light-label {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            width: 80px;
+            text-transform: uppercase;
+        }
+
+        .hmi-light {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #555;
+            border: 4px solid #333;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .hmi-light::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 7px;
+            width: 10px;
+            height: 10px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+        }
+
+        .hmi-light-red.active {
+            background: radial-gradient(circle at 35% 35%, #ff3333 0%, #990000 80%);
+            box-shadow: 0 0 25px rgba(255, 51, 51, 0.9), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+
+        .hmi-light-yellow.active {
+            background: radial-gradient(circle at 35% 35%, #ffea33 0%, #b39b00 80%);
+            box-shadow: 0 0 25px rgba(255, 234, 51, 0.9), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+
+        .hmi-light-green.active {
+            background: radial-gradient(circle at 35% 35%, #33cc33 0%, #006600 80%);
+            box-shadow: 0 0 25px rgba(51, 204, 51, 0.9), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+
+        .hmi-home-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            width: 42px;
+            height: 36px;
+            background-color: #fff;
+            border: 2px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .hmi-home-btn:hover {
+            background-color: #eee;
+            color: #222;
+        }
+
+        /* SVG Intersection Animation */
+        .intersection-wrapper {
+            width: 100%;
+            height: 320px;
+            background-color: #1a1e1a;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ladder Logic Styles */
+        .ladder-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+        }
+
+        .rung {
+            display: flex;
+            align-items: center;
+            height: 50px;
+            position: relative;
+            background: linear-gradient(to right, transparent, var(--bg-secondary) 10%, var(--bg-secondary) 90%, transparent);
+            border-radius: 8px;
+            padding: 0 15px;
+        }
+
+        .rung-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            width: 75px;
+            flex-shrink: 0;
+            color: var(--text-muted);
+        }
+
+        .rung-line {
+            flex-grow: 1;
+            height: 4px;
+            background-color: var(--border-color);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        .rung-line.active {
+            background-color: #2ec4b6;
+            box-shadow: 0 0 8px rgba(46, 196, 182, 0.6);
+        }
+
+        .contact, .coil {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-card);
+            padding: 0 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .contact {
+            width: 30px;
+            height: 30px;
+            border-left: 3px solid var(--text-secondary);
+            border-right: 3px solid var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .contact.nc::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 32px;
+            height: 3px;
+            background-color: var(--text-secondary);
+            transform: translate(-50%, -50%) rotate(-45deg);
+            transition: background-color 0.3s ease;
+        }
+
+        .contact.active {
+            border-left-color: #2ec4b6;
+            border-right-color: #2ec4b6;
+            color: #2ec4b6;
+        }
+
+        .contact.nc.active::after {
+            background-color: #2ec4b6;
+        }
+
+        .coil {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--text-secondary);
+            border-radius: 50%;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .coil.active {
+            border-color: #2ec4b6;
+            color: #2ec4b6;
+            box-shadow: 0 0 10px rgba(46, 196, 182, 0.4);
+        }
+
+        .tag-label {
+            position: absolute;
+            bottom: -18px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .contact.active .tag-label, .coil.active .tag-label {
+            color: #2ec4b6;
+            font-weight: bold;
+        }
+
+        /* I/O details table */
+        .io-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            font-size: 1.4rem;
+        }
+
+        .io-table th, .io-table td {
+            text-align: left;
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .io-table th {
+            font-weight: 600;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .io-table td {
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+        }
+
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            background-color: var(--bg-secondary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- Floating Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <span>A</span>.Guhagarkar
+            </a>
+            
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html#home" class="nav-link">Home</a></li>
+                    <li><a href="index.html#about" class="nav-link">About</a></li>
+                    <li><a href="index.html#internships" class="nav-link">Experience</a></li>
+                    <li><a href="index.html#projects" class="nav-link active">Projects</a></li>
+                    <li><a href="index.html#resume" class="nav-link">Skills</a></li>
+                    <li><a href="index.html#achievements" class="nav-link">Achievements</a></li>
+                    <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle visual theme">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun sun-icon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon moon-icon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container sim-container">
+        <!-- Back Button -->
+        <a href="index.html#projects" class="back-btn">
+            <i data-lucide="arrow-left"></i> Back to Portfolio
+        </a>
+
+        <!-- Title -->
+        <div class="sim-title-group reveal">
+            <span class="subtitle-badge">Interactive Simulation</span>
+            <h1 class="section-title">PLC-Based <span class="serif-italic">Traffic Light</span> Control System</h1>
+            <p class="section-description">An interactive simulation demonstrating Delta PLC sequencing logic, digital HMI panel operation, and road traffic behavior.</p>
+        </div>
+
+        <!-- Simulation Grid -->
+        <div class="sim-grid">
+            <!-- Left Side: Delta HMI and Intersection SVG -->
+            <div class="reveal">
+                <!-- HMI Panel Emulator -->
+                <div class="sim-card" style="padding: 1.5rem;">
+                    <div class="hmi-window">
+                        <div class="hmi-header">
+                            <span>Delta DOP-107BV Emulator, V1.0110, Offline Mode</span>
+                            <div class="hmi-status-dot" id="hmi-status-dot"></div>
+                        </div>
+                        <div class="hmi-screen">
+                            <!-- Column 1: Start and Stop PB buttons -->
+                            <div class="hmi-controls">
+                                <div class="hmi-btn-group">
+                                    <button class="hmi-button hmi-btn-start" id="hmi-start-btn" aria-label="Start Button"></button>
+                                    <span class="hmi-btn-label">START PB</span>
+                                </div>
+                                <div class="hmi-btn-group">
+                                    <button class="hmi-button hmi-btn-stop" id="hmi-stop-btn" aria-label="Stop Button"></button>
+                                    <span class="hmi-btn-label">STOP PB</span>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Digital Timer Box -->
+                            <div class="hmi-timer-box">
+                                <span class="hmi-btn-label" style="font-size: 1.1rem; color: #555;">TIMER</span>
+                                <div class="hmi-timer-border">
+                                    <div class="hmi-timer-screen">
+                                        <div class="hmi-timer-value" id="hmi-timer-val">000</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Column 3: Stacked lights -->
+                            <div class="hmi-indicators">
+                                <div class="hmi-light-group">
+                                    <div class="hmi-light hmi-light-red" id="hmi-light-red"></div>
+                                    <span class="hmi-light-label">SIGNAL 1</span>
+                                </div>
+                                <div class="hmi-light-group">
+                                    <div class="hmi-light hmi-light-yellow" id="hmi-light-yellow"></div>
+                                    <span class="hmi-light-label">SIGNAL 2</span>
+                                </div>
+                                <div class="hmi-light-group">
+                                    <div class="hmi-light hmi-light-green" id="hmi-light-green"></div>
+                                    <span class="hmi-light-label">SIGNAL 3</span>
+                                </div>
+                            </div>
+
+                            <!-- Home Button overlay -->
+                            <div class="hmi-home-btn" id="hmi-home-btn" title="Reset Simulation">
+                                <i data-lucide="home" style="width: 18px; height: 18px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Road Traffic Intersection Visualizer -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="car"></i>Intersection Road Traffic Visualizer</h3>
+                    <div class="intersection-wrapper">
+                        <svg viewBox="0 0 400 300" width="100%" height="100%">
+                            <!-- Roads Background -->
+                            <rect x="0" y="110" width="400" height="80" fill="#2d312d" />
+                            <rect x="160" y="0" width="80" height="300" fill="#2d312d" />
+                            
+                            <!-- Road Markings -->
+                            <!-- Center Dash Line horizontal -->
+                            <line x1="0" y1="150" x2="400" y2="150" stroke="#faf8f5" stroke-dasharray="10, 8" stroke-width="2" />
+                            <!-- Center Dash Line vertical -->
+                            <line x1="200" y1="0" x2="200" y2="300" stroke="#faf8f5" stroke-dasharray="10, 8" stroke-width="2" />
+                            
+                            <!-- Stop Lines -->
+                            <line x1="160" y1="110" x2="160" y2="190" stroke="#faf8f5" stroke-width="4" />
+                            <line x1="240" y1="110" x2="240" y2="190" stroke="#faf8f5" stroke-width="4" />
+                            
+                            <!-- Traffic Light pole visual -->
+                            <rect x="140" y="80" width="8" height="30" fill="#777" />
+                            <!-- Traffic Light head background -->
+                            <rect x="134" y="45" width="20" height="36" rx="4" fill="#111" />
+                            <circle cx="144" cy="51" r="4" fill="#333" id="road-light-red" />
+                            <circle cx="144" cy="63" r="4" fill="#333" id="road-light-yellow" />
+                            <circle cx="144" cy="75" r="4" fill="#333" id="road-light-green" />
+
+                            <!-- Cars -->
+                            <!-- Car 1 (Heading East/Right, on bottom lane of horizontal road) -->
+                            <g id="car-1" transform="translate(-50, 160)">
+                                <rect x="0" y="2" width="28" height="16" rx="4" fill="#ff4d4d" />
+                                <rect x="18" y="4" width="8" height="12" rx="2" fill="#eaeaea" opacity="0.8" />
+                                <circle cx="7" cy="19" r="3" fill="#000" />
+                                <circle cx="21" cy="19" r="3" fill="#000" />
+                            </g>
+                            <!-- Car 2 (Heading West/Left, on top lane of horizontal road) -->
+                            <g id="car-2" transform="translate(420, 122)">
+                                <rect x="0" y="2" width="28" height="16" rx="4" fill="#3399ff" />
+                                <rect x="2" y="4" width="8" height="12" rx="2" fill="#eaeaea" opacity="0.8" />
+                                <circle cx="7" cy="1" r="3" fill="#000" />
+                                <circle cx="21" cy="1" r="3" fill="#000" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Ladder Logic & Explanations -->
+            <div class="reveal">
+                <!-- Ladder Logic -->
+                <div class="sim-card">
+                    <h3 class="sim-card-title"><i data-lucide="network"></i>PLC Ladder Logic Program</h3>
+                    <div class="ladder-wrapper">
+                        <!-- Rung 0: Start/Stop Interlock to active M0 Run -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0000</div>
+                            <div class="rung-line" id="rung-line-0">
+                                <!-- Contact: START (M10) -->
+                                <div class="contact" style="left: 20%;" id="contact-start">
+                                    M10
+                                    <span class="tag-label">START_PB</span>
+                                </div>
+                                <!-- Contact: STOP NC (M11) -->
+                                <div class="contact nc" style="left: 45%;" id="contact-stop">
+                                    M11
+                                    <span class="tag-label">STOP_PB</span>
+                                </div>
+                                <!-- Seal-in contact M0 -->
+                                <div class="contact" style="left: 20%; top: 32px;" id="contact-seal">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                                <!-- Coil M0 -->
+                                <div class="coil" style="left: 85%;" id="coil-run">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 1: System Run & Red Active State -> SIGNAL 1 -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0001</div>
+                            <div class="rung-line" id="rung-line-1">
+                                <!-- Run (M0) -->
+                                <div class="contact" style="left: 25%;" id="contact-r1-m0">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                                <!-- Red active contact (Timer Accumulator in [0, 10s]) -->
+                                <div class="contact" style="left: 55%;" id="contact-r1-red">
+                                    M1
+                                    <span class="tag-label">RED_PHS</span>
+                                </div>
+                                <!-- Coil Signal 1 (Y20) -->
+                                <div class="coil" style="left: 85%;" id="coil-y20">
+                                    Y20
+                                    <span class="tag-label">SIGNAL_1</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 2: System Run & Yellow Active State -> SIGNAL 2 -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0002</div>
+                            <div class="rung-line" id="rung-line-2">
+                                <!-- Run (M0) -->
+                                <div class="contact" style="left: 25%;" id="contact-r2-m0">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                                <!-- Yellow active contact (Timer Accumulator in [10s, 15s]) -->
+                                <div class="contact" style="left: 55%;" id="contact-r2-yel">
+                                    M2
+                                    <span class="tag-label">YEL_PHS</span>
+                                </div>
+                                <!-- Coil Signal 2 (Y21) -->
+                                <div class="coil" style="left: 85%;" id="coil-y21">
+                                    Y21
+                                    <span class="tag-label">SIGNAL_2</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 3: System Run & Green Active State -> SIGNAL 3 -->
+                        <div class="rung">
+                            <div class="rung-label">RUNG 0003</div>
+                            <div class="rung-line" id="rung-line-3">
+                                <!-- Run (M0) -->
+                                <div class="contact" style="left: 25%;" id="contact-r3-m0">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                                <!-- Green active contact (Timer Accumulator in [15s, 25s]) -->
+                                <div class="contact" style="left: 55%;" id="contact-r3-grn">
+                                    M3
+                                    <span class="tag-label">GRN_PHS</span>
+                                </div>
+                                <!-- Coil Signal 3 (Y22) -->
+                                <div class="coil" style="left: 85%;" id="coil-y22">
+                                    Y22
+                                    <span class="tag-label">SIGNAL_3</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rung 4: Timer T0 rung -->
+                        <div class="rung" style="height: 60px;">
+                            <div class="rung-label">RUNG 0004</div>
+                            <div class="rung-line" id="rung-line-4">
+                                <div class="contact" style="left: 25%;" id="contact-r4-m0">
+                                    M0
+                                    <span class="tag-label">RUN_RLY</span>
+                                </div>
+                                <!-- Reset Contact T0 (reset when cycle wraps at 25s) -->
+                                <div class="contact nc" style="left: 55%;" id="contact-r4-t0">
+                                    T0
+                                    <span class="tag-label">CYCLE_DN</span>
+                                </div>
+                                <!-- Timer block Y22 -->
+                                <div class="coil" style="left: 85%; border-radius: 4px; width: 55px; height: 36px; font-size: 0.9rem;" id="coil-t0">
+                                    T0
+                                    <div style="font-size: 0.7rem; font-weight: normal; margin-top: -3px;">25.0s</div>
+                                    <span class="tag-label">TMR_T0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanations & Details Section -->
+        <div class="sim-card reveal">
+            <h3 class="sim-card-title"><i data-lucide="book-open"></i>How the Traffic Light Controller Works</h3>
+            
+            <p style="margin-bottom: 2rem; font-size: 1.6rem; line-height: 1.7;">
+                This simulator recreates the <strong>Delta DOP-107BV HMI panel emulator</strong> interface running alongside <strong>Delta ISPSoft PLC</strong> ladder logic for a single-lane road junction traffic signal. Industrial signals use precise hardware internal relays (M registers) and timer coils (T registers) to coordinate Red, Yellow, and Green lights safely.
+            </p>
+
+            <h4 style="font-size: 1.6rem; font-weight: 600; margin: 2.5rem 0 1rem 0; color: var(--text-primary);">Program Sequence:</h4>
+            <ul style="list-style-type: disc; padding-left: 2.5rem; margin-bottom: 3rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>Pressing the <strong>START PB</strong> on the HMI triggers standard latching relay <span class="code-font">M0</span> (Rung 0). The seal-in contact bypasses the Start button, keeping the system running.</li>
+                <li><strong>Timer T0 Block:</strong> Rung 4 drives the main timer <span class="code-font">T0</span>. It accumulates time up to 25.0 seconds (250 ticks). At 25.0 seconds, the normally-closed contact <span class="code-font">T0</span> opens, resetting the timer to 0 and starting the cycle again automatically.</li>
+                <li><strong>🔴 Signal 1 (Red Phase):</strong> While the timer is between 0.0s and 10.0s, the internal coil <span class="code-font">M1</span> is active. This closes contact M1 on Rung 1, energizing physical output <span class="code-font">Y20</span> (Red Light). Intersection cars detect this Red phase and decelerate to stop at the line.</li>
+                <li><strong>🟡 Signal 2 (Yellow Phase):</strong> When the timer reaches 10.0s (up to 15.0s), the phase changes. Coil <span class="code-font">M2</span> is energized, closing Rung 2 and activating output <span class="code-font">Y21</span> (Yellow Light). Cars remain stopped.</li>
+                <li><strong>🟢 Signal 3 (Green Phase):</strong> Between 15.0s and 25.0s, internal coil <span class="code-font">M3</span> is active, closing Rung 3 and turning on physical output <span class="code-font">Y22</span> (Green Light). Cars accelerate and cross the intersection.</li>
+                <li><strong>STOP Operation:</strong> Pressing the <strong>STOP PB</strong> opens contact <span class="code-font">M11</span> (Rung 0), de-energizing the main run relay <span class="code-font">M0</span>. The entire process halts instantly, turning all output signals and timers OFF for safety.</li>
+            </ul>
+
+            <h4 style="font-size: 1.6rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">Delta PLC I/O Mapping:</h4>
+            <table class="io-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Type</th>
+                        <th>Tag Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="code-font">M10</td>
+                        <td>HMI Register</td>
+                        <td>START PB</td>
+                        <td>Virtual HMI button mapping to momentary START action.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">M11</td>
+                        <td>HMI Register</td>
+                        <td>STOP PB</td>
+                        <td>Virtual HMI button mapping to momentary STOP action.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">M0</td>
+                        <td>Internal Relay</td>
+                        <td>RUN_RLY</td>
+                        <td>Main control relay that seals the system power state.</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">Y20</td>
+                        <td>Physical Output</td>
+                        <td>SIGNAL_1</td>
+                        <td>Drives the Red signal light bulb (🔴).</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">Y21</td>
+                        <td>Physical Output</td>
+                        <td>SIGNAL_2</td>
+                        <td>Drives the Yellow warning signal light bulb (🟡).</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">Y22</td>
+                        <td>Physical Output</td>
+                        <td>SIGNAL_3</td>
+                        <td>Drives the Green clear-to-go signal light bulb (🟢).</td>
+                    </tr>
+                    <tr>
+                        <td class="code-font">T0</td>
+                        <td>Internal Timer</td>
+                        <td>TMR_T0</td>
+                        <td>Delta 100ms timer block accumulating from 0 to 25.0 seconds.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 4rem 0; text-align: center; font-size: 1.4rem; color: var(--text-muted);">
+        <div class="container">
+            <p>© 2026 Akeel Guhagarkar. Designed for Delta PLC HMI demonstration.</p>
+        </div>
+    </footer>
+
+    <!-- Custom Cursor script and Theme toggler sync -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme setup
+            const themeToggle = document.getElementById('theme-toggle');
+            const getSavedTheme = () => localStorage.getItem('portfolio-theme');
+            const saveTheme = (theme) => localStorage.setItem('portfolio-theme', theme);
+            const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                saveTheme(theme);
+            };
+
+            const savedTheme = getSavedTheme();
+            applyTheme(savedTheme ? savedTheme : getSystemTheme());
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(newTheme);
+                });
+            }
+
+            // Custom cursor glow movement
+            const cursorGlow = document.getElementById('cursor-glow');
+            if (cursorGlow && window.innerWidth > 900) {
+                document.addEventListener('mousemove', (e) => {
+                    cursorGlow.style.opacity = '1';
+                    cursorGlow.style.left = `${e.clientX}px`;
+                    cursorGlow.style.top = `${e.clientY}px`;
+                });
+                document.addEventListener('mouseleave', () => {
+                    cursorGlow.style.opacity = '0';
+                });
+            }
+
+            // Initialize Lucide Icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+    <!-- Simulation Script Link -->
+    <script src="plc-traffic-light.js"></script>
+</body>
+</html>
