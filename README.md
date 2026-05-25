@@ -82,11 +82,9 @@ To run this site locally, ensure you have [Node.js](https://nodejs.org/) install
 
 ## 🎖️ About the Engineer
 
-I am an **Electrical Engineering student** at the *Finolex Academy of Management & Technology (FAMT)*, Ratnagiri, specializing in embedded systems, IoT architecture, and computer-vision-driven biometrics. 
+I am an **Electrical Engineering student** at the *Finolex Academy of Management & Technology (FAMT)*, Ratnagiri, specializing in embedded systems and IoT architecture. 
 
 ### Key Highlights:
-* **Patent Co-applicant**: Co-designed and registered a patent-pending *Smart Attendance System with Biometrics and Face Recognition* (Application No: 461354-001).
-* **MTDC 1st Prize Winner**: Recipient of the state-level drawing award for spatial composition and architectural rendering—a testament to my attention to visual detail.
 * **BIS Chapter Coordinator**: Active student lead driving technical quality standards under the Bureau of Indian Standards (BIS).
 
 ---
