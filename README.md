@@ -7,7 +7,7 @@
 
 Welcome to my personal portfolio repository! This is a modern, highly refined, and responsive single-page portfolio website tailored to showcase my skills, projects, achievements, and professional timeline. 
 
-The website is designed with a premium **minimalist sand-beige aesthetic**, blending warm mid-century editorial typography with precise, futuristic technical elements. It stands as a physical manifestation of my engineering philosophy: **"Bridging physical circuitry with intelligent software logic."**
+The website is designed with a premium **minimalist sand-beige aesthetic**, blending warm mid-century editorial typography with precise, futuristic technical elements. It stands as a physical manifestation of my engineering philosophy: **"Bridging electrical innovation with AI-driven intelligence."**
 
 ---
 
