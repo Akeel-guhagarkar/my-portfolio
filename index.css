@@ -1224,7 +1224,8 @@ img {
 
 .contact-avatar-wrapper {
     position: relative;
-    width: 100%;
+    width: 75%;
+    margin: 0 auto;
     aspect-ratio: 4 / 5;
     border-radius: 1.5rem;
     overflow: hidden;
