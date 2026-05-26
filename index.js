@@ -121,9 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typingTextElement) {
         const words = [
             'Electrical Engineer',
-            'IoT Specialist',
-            'System Innovator',
-            'Artistic Designer'
+            'AI Enthusiast',
+            'Future Tech Engineer',
+            'AI & IoT Developer',
+            'Engineering Innovator'
         ];
         
         let wordIndex = 0;
