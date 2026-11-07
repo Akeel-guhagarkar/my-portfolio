@@ -5,3 +5,5 @@ Thumbs.db
 .idea/
 .gemini/
 server.py
+__pycache__/
+*.pyc
