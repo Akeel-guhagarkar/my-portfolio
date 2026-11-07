@@ -286,10 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // INTERACTIVE CONTACT FORM & FEEDBACK
+    // INTERACTIVE CONTACT FORM HANDLER (Direct Gmail SMTP)
     // ==========================================
     if (contactForm) {
-        contactForm.addEventListener('submit', (e) => {
+        contactForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const submitBtn = contactForm.querySelector('.btn-submit');
@@ -302,42 +302,58 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtnText.textContent = 'Sending Message...';
             if (submitBtnIcon) submitBtnIcon.style.opacity = '0.5';
 
-            // Extract values for mock submission
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
+            formFeedback.style.opacity = '1';
+            formFeedback.textContent = '';
+            formFeedback.className = 'form-feedback';
 
-            // Log details for testing
-            console.log('--- Mock Form Submission ---');
-            console.log(`From: ${name} (${email})`);
-            console.log(`Subject: ${subject}`);
-            console.log(`Message: ${message}`);
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const subject = document.getElementById('subject').value.trim();
+            const message = document.getElementById('message').value.trim();
 
-            // Simulate server network request delay
-            setTimeout(() => {
-                // Reset Button
+            try {
+                // Try sending directly via our Python Gmail SMTP Server
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, subject, message })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    formFeedback.textContent = `Thank you, ${name}! Your message has been sent directly to Akeel's Gmail inbox!`;
+                    formFeedback.className = 'form-feedback success';
+                    contactForm.reset();
+                } else {
+                    throw new Error(data.error || 'Server error');
+                }
+            } catch (err) {
+                console.warn('API submission note:', err);
+                // Guaranteed Fallback: Open pre-filled Gmail composer
+                const mailSubject = encodeURIComponent(`Portfolio Inquiry: ${subject} (from ${name})`);
+                const mailBody = encodeURIComponent(
+                    `Hi Akeel,\n\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}\n\n---\nSent from Akeel Guhagarkar Portfolio Website`
+                );
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=guhagarkarakeel@gmail.com&su=${mailSubject}&body=${mailBody}`;
+                window.open(gmailUrl, '_blank');
+
+                formFeedback.textContent = `Thank you, ${name}! Your message is prepared in Gmail. Just click Send!`;
+                formFeedback.className = 'form-feedback success';
+                contactForm.reset();
+            } finally {
                 submitBtn.disabled = false;
                 submitBtnText.textContent = originalText;
                 if (submitBtnIcon) submitBtnIcon.style.opacity = '1';
 
-                // Display success feedback
-                formFeedback.textContent = `Thank you, ${name}! Your message has been sent successfully.`;
-                formFeedback.className = 'form-feedback success';
-                
-                // Clear Form
-                contactForm.reset();
-
-                // Clear feedback after 5 seconds
                 setTimeout(() => {
                     formFeedback.style.opacity = '0';
                     setTimeout(() => {
                         formFeedback.textContent = '';
                         formFeedback.className = 'form-feedback';
                     }, 300);
-                }, 5000);
-
-            }, 1500);
+                }, 8000);
+            }
         });
     }
 });
